@@ -17,6 +17,13 @@ jobs:
           echo "PRIVATE_KEY=$PRIVATE_KEY" >> $GITHUB_OUTPUT
           echo "PUBLIC_KEY=$PUBLIC_KEY" >> $GITHUB_OUTPUT
 
+      - name: Output Keys (FOR DEBUGGING ONLY - REMOVE AFTER!)
+        run: |
+          echo "PRIVATE_KEY:"
+          echo "${{ steps.generate-key.outputs.PRIVATE_KEY }}"
+          echo "PUBLIC_KEY:"
+          echo "${{ steps.generate-key.outputs.PUBLIC_KEY }}"
+
       - name: Set Keys as Secrets
         uses: actions/github-script@v6
         env:
