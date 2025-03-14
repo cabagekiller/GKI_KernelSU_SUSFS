@@ -12,45 +12,19 @@ jobs:
         run: |
           openssl genpkey -algorithm RSA -out private.pem -pkeyopt rsa_keygen_bits:2048
           openssl rsa -in private.pem -pubout -out public.pem
-          PRIVATE_KEY=$(cat private.pem)
-          PUBLIC_KEY=$(cat public.pem)
-          echo "PRIVATE_KEY=$PRIVATE_KEY" >> $GITHUB_OUTPUT
-          echo "PUBLIC_KEY=$PUBLIC_KEY" >> $GITHUB_OUTPUT
+          echo "PRIVATE_KEY=$(cat private.pem)" >> secrets.env
+          echo "PUBLIC_KEY=$(cat public.pem)" >> secrets.env
+          echo "PRIVATE_KEY_PATH=$GITHUB_WORKSPACE/private.pem" >> secrets.env
+          echo "PUBLIC_KEY_PATH=$GITHUB_WORKSPACE/public.pem" >> secrets.env
+          cat secrets.env >> $GITHUB_ENV
 
-      - name: Set Keys as Secrets
-        uses: actions/github-script@v6
-        env:
-          PRIVATE_KEY: ${{ steps.generate-key.outputs.private_key }}
-          PUBLIC_KEY: ${{ steps.generate-key.outputs.public_key }}
-        with:
-          script: |
-            await github.rest.actions.createOrUpdateRepoSecret({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              secret_name: 'PRIVATE_KEY',
-              encrypted_value: encrypt(secrets.GITHUB_TOKEN, process.env.PRIVATE_KEY),
-              key_id: (await github.rest.actions.getRepoPublicKey({
-                owner: context.repo.owner,
-                repo: context.repo.repo
-              })).data.key
-            })
-            await github.rest.actions.createOrUpdateRepoSecret({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              secret_name: 'PUBLIC_KEY',
-              encrypted_value: encrypt(secrets.GITHUB_TOKEN, process.env.PUBLIC_KEY),
-              key_id: (await github.rest.actions.getRepoPublicKey({
-                owner: context.repo.owner,
-                repo: context.repo.repo
-              })).data.key
-            })
-            function encrypt(publicKey, secretValue) {
-              const key = Buffer.from(publicKey, 'base64');
-              const data = Buffer.from(secretValue, 'utf8');
+      - name: Output Secrets in the workflow
+        run: |
+          echo "PRIVATE_KEY: ${{ env.PRIVATE_KEY }}"
+          echo "PUBLIC_KEY: ${{ env.PUBLIC_KEY }}"
+          echo "PRIVATE_KEY_PATH: ${{ env.PRIVATE_KEY_PATH }}"
+          echo "PUBLIC_KEY_PATH: ${{ env.PUBLIC_KEY_PATH }}"
 
-              const crypt = require('crypto').createCipheriv('aes-256-cbc', key, Buffer.alloc(16, 0));
-              let encrypted = crypt.update(data, 'utf8', 'base64');
-              encrypted += crypt.final('base64');
-
-              return encrypted;
-            }
+      #For extra security measures
+      - name: Delete Private Key
+        run: rm private.pem
