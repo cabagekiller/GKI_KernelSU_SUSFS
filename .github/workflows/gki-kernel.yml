@@ -118,6 +118,8 @@ jobs:
           if [ -n "$BOOT_SIGN_KEY" ]; then
             echo "$BOOT_SIGN_KEY" > private_key.pem
             openssl rsa -in private_key.pem -pubout -out public_key.pem
+            PRIVATE_KEY_PATH="$GITHUB_WORKSPACE/private_key.pem"
+            echo "PRIVATE_KEY_PATH=$PRIVATE_KEY_PATH" >> $GITHUB_ENV
 
             BOOT_SIGN_KEY_PATH="$GITHUB_WORKSPACE/public_key.pem"
             echo "BOOT_SIGN_KEY_PATH=$BOOT_SIGN_KEY_PATH" >> $GITHUB_ENV
@@ -529,6 +531,8 @@ jobs:
       - name: Run Boot Image ${{ inputs.android_version }} Build Script
         if: ${{ inputs.android_version == 'android13' || inputs.android_version == 'android14' || inputs.android_version == 'android15' }}
         run: |
+          #!/bin/bash -e
+
           cd bootimgs
 
           echo "Building Image.gz"
@@ -536,18 +540,18 @@ jobs:
 
           echo "Building boot.img"
           $MKBOOTIMG --header_version 4 --kernel Image --output boot.img
-          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot.img ../${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot.img
+          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot.img --algorithm SHA256_RSA2048 --key "$PRIVATE_KEY_PATH"
+          cp ./boot.img ../android13-5.15.123-2023-11-boot.img
 
           echo "Building boot-gz.img"
           $MKBOOTIMG --header_version 4 --kernel Image.gz --output boot-gz.img
-          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot-gz.img ../${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot-gz.img
+          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-gz.img --algorithm SHA256_RSA2048 --key "$PRIVATE_KEY_PATH"
+          cp ./boot-gz.img ../android13-5.15.123-2023-11-boot-gz.img
 
           echo "Building boot-lz4.img"
           $MKBOOTIMG --header_version 4 --kernel Image.lz4 --output boot-lz4.img
-          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key $BOOT_SIGN_KEY_PATH
-          cp ./boot-lz4.img ../${{ inputs.android_version }}-${{ inputs.kernel_version }}.${{ inputs.sub_level }}-${{ inputs.os_patch_level }}-boot-lz4.img
+          $AVBTOOL add_hash_footer --partition_name boot --partition_size $((64 * 1024 * 1024)) --image boot-lz4.img --algorithm SHA256_RSA2048 --key "$PRIVATE_KEY_PATH"
+          cp ./boot-lz4.img ../android13-5.15.123-2023-11-boot-lz4.img
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
