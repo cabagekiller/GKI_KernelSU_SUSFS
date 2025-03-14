@@ -11,8 +11,9 @@ jobs:
         id: generate-key
         run: |
           openssl genpkey -algorithm RSA -out private.pem -pkeyopt rsa_keygen_bits:2048
-          PUBLIC_KEY=$(openssl rsa -in private.pem -pubout)
+          openssl rsa -in private.pem -pubout -out public.pem
           PRIVATE_KEY=$(cat private.pem)
+          PUBLIC_KEY=$(cat public.pem)
           echo "PRIVATE_KEY=$PRIVATE_KEY" >> $GITHUB_OUTPUT
           echo "PUBLIC_KEY=$PUBLIC_KEY" >> $GITHUB_OUTPUT
 
